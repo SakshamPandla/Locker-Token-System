@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Locker System</title>
+    <script src="https://unpkg.com/lucide@0.263.0/dist/umd/lucide.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%);
+            min-height: 100vh;
+            color: #1f2937;
+            padding: 1.5rem;
+        }
+        
+        .container {
+            max-width: 64rem;
+            margin: 0 auto;
+        }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .header h1 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            color: #6b7280;
+            font-size: 1rem;
+        }
+        
+        /* Status Bar */
+        .status-bar {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .status-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .status-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+        }
+        
+        .status-available .lucide {
+            color: #059669;
+        }
+        
+        .status-occupied .lucide {
+            color: #dc2626;
+        }
+        
+        .status-total {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        
+        /* Main Interface */
+        .main-card {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: all 0.15s ease;
+            background: white;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: transparent;
+            box-shadow: 0 0 0 2px #3b82f6;
+        }
+        
+        .form-input::placeholder {
+            color: #9ca3af;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-decoration: none;
+        }
+        
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+        
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: #374151;
+            border: 1px solid #d1d5db;
+            flex: none;
+            padding: 0.75rem 1.5rem;
+        }
+        
+        .btn-secondary:hover {
+            background: #f9fafb;
+        }
+        
+        /* Message Display */
+        .message {
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .message.success {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+        }
+        
+        .message.error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+        }
+        
+        .message.info {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1e40af;
+        }
+        
+        .message-text {
+            font-weight: 500;
+        }
+        
+        /* Assignment Display */
+        .assignment-card {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+        
+        .assignment-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #166534;
+            margin-bottom: 1rem;
+        }
+        
+        .assignment-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        
+        .assignment-details h4 {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-bottom: 0.25rem;
+        }
+        
+        .assignment-details .student-name {
+            font-weight: 500;
+            color: #1f2937;
+            margin-bottom: 0.125rem;
+        }
+        
+        .assignment-details .student-info {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-bottom: 0.125rem;
+        }
+        
+        .locker-number {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: #059669;
+        }
+        
+        /* Sample Data */
+        .sample-card {
+            background: #f9fafb;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+        }
+        
+        .sample-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 1rem;
+        }
+        
+        .sample-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
+        
+        .sample-item {
+            background: white;
+            border-radius: 0.25rem;
+            padding: 0.75rem 0.5rem;
+            text-align: center;
+        }
+        
+        .sample-enrollment {
+            font-size: 0.875rem;
+            font-family: 'Courier New', monospace;
+            color: #1f2937;
+            margin-bottom: 0.125rem;
+        }
+        
+        .sample-name {
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+        
+        /* Connection Status */
+        .connection-status {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            z-index: 1000;
+        }
+        
+        .connection-status.connected {
+            background: #f0fdf4;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+        
+        .connection-status.disconnected {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        
+        /* Responsive Design */
+        @media (min-width: 768px) {
+            .assignment-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .sample-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .sample-grid {
+                grid-template-columns: repeat(5, 1fr);
+            }
+        }
+        
+        @media (max-width: 640px) {
+            .status-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .status-left {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .btn {
+                flex: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="connection-status" id="connectionStatus">Connecting...</div>
+    
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Library Locker System</h1>
+            <p>Personal Belongings Token Allotment</p>
+        </div>
+        
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-content">
+                <div class="status-left">
+                    <div class="status-item status-available">
+                        <i data-lucide="lock" class="lucide"></i>
+                        <span>Available: <span id="availableCount">150</span></span>
+                    </div>
+                    <div class="status-item status-occupied">
+                        <i data-lucide="user" class="lucide"></i>
+                        <span>Occupied: <span id="occupiedCount">0</span></span>
+                    </div>
+                </div>
+                <div class="status-total">
+                    Total Lockers: <span id="totalCount">150</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Interface -->
+        <div class="main-card">
+            <div class="form-group">
+                <label class="form-label" for="enrollmentInput">Enter Enrollment Number</label>
+                <input type="text" id="enrollmentInput" class="form-input" placeholder="e.g., CS2021001">
+            </div>
+            
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="assignLocker()">
+                    <i data-lucide="lock" class="lucide"></i>
+                    <span>Assign Locker</span>
+                </button>
+                
+                <button class="btn btn-danger" onclick="exitLocker()">
+                    <i data-lucide="log-out" class="lucide"></i>
+                    <span>Exit Locker</span>
+                </button>
+                
+                <button class="btn btn-secondary" onclick="resetForm()">
+                    Reset
+                </button>
+            </div>
+        </div>
+        
+        <!-- Message Display -->
+        <div class="message" id="messageDiv">
+            <i data-lucide="check-circle" class="lucide" id="messageIcon"></i>
+            <span class="message-text" id="messageText"></span>
+        </div>
+        
+        <!-- Assignment Display -->
+        <div class="assignment-card" id="assignmentCard">
+            <h3 class="assignment-title">Current Assignment</h3>
+            <div class="assignment-grid">
+                <div class="assignment-details" id="studentDetails">
+                    <h4>Student Details</h4>
+                    <div class="student-name" id="studentName"></div>
+                    <div class="student-info" id="studentEnrollment"></div>
+                    <div class="student-info" id="studentCourse"></div>
+                </div>
+                <div class="assignment-details" id="lockerDetails">
+                    <h4>Assigned Locker</h4>
+                    <div class="locker-number" id="lockerNumber"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sample Data -->
+        <div class="sample-card">
+            <h3 class="sample-title">Sample Enrollment Numbers (for testing)</h3>
+            <div class="sample-grid" id="sampleGrid">
+                <!-- Sample data will be populated here -->
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+        
+        // Socket connection
+        const socket = io();
+        
+        // Connection status
+        const connectionStatus = document.getElementById('connectionStatus');
+        
+        socket.on('connect', function() {
+            connectionStatus.textContent = '🟢 Connected';
+            connectionStatus.className = 'connection-status connected';
+        });
+        
+        socket.on('disconnect', function() {
+            connectionStatus.textContent = '🔴 Disconnected';
+            connectionStatus.className = 'connection-status disconnected';
+        });
+        
+        // Status updates
+        socket.on('status_update', function(data) {
+            document.getElementById('availableCount').textContent = data.available;
+            document.getElementById('occupiedCount').textContent = data.occupied;
+            document.getElementById('totalCount').textContent = data.total;
+        });
+        
+        // Sample data
+        socket.on('sample_data', function(data) {
+            const sampleGrid = document.getElementById('sampleGrid');
+            sampleGrid.innerHTML = '';
+            
+            // Display first 10 entries
+            const entries = Object.entries(data).slice(0, 10);
+            for (const [enrollment, details] of entries) {
+                const sampleItem = document.createElement('div');
+                sampleItem.className = 'sample-item';
+                sampleItem.innerHTML = `
+                    <div class="sample-enrollment">${enrollment}</div>
+                    <div class="sample-name">${details.name}</div>
+                `;
+                sampleGrid.appendChild(sampleItem);
+            }
+        });
+        
+        // Assignment result
+        socket.on('assignment_result', function(data) {
+            showMessage(data.message, data.type);
+            
+            if (data.assignment) {
+                showAssignment(data.assignment);
+            }
+        });
+        
+        // Exit result
+        socket.on('exit_result', function(data) {
+            showMessage(data.message, data.type);
+            
+            if (data.success) {
+                hideAssignment();
+            }
+        });
+        
+        // Functions
+        function assignLocker() {
+            const enrollment = document.getElementById('enrollmentInput').value;
+            socket.emit('assign_locker', { enrollment: enrollment });
+        }
+        
+        function exitLocker() {
+            const enrollment = document.getElementById('enrollmentInput').value;
+            socket.emit('exit_locker', { enrollment: enrollment });
+        }
+        
+        function resetForm() {
+            document.getElementById('enrollmentInput').value = '';
+            hideMessage();
+            hideAssignment();
+        }
+        
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('messageDiv');
+            const messageText = document.getElementById('messageText');
+            const messageIcon = document.getElementById('messageIcon');
+            
+            messageText.textContent = message;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'flex';
+            
+            // Update icon based on type
+            if (type === 'success') {
+                messageIcon.setAttribute('data-lucide', 'check-circle');
+            } else {
+                messageIcon.setAttribute('data-lucide', 'alert-circle');
+            }
+            
+            lucide.createIcons();
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                hideMessage();
+            }, 5000);
+        }
+        
+        function hideMessage() {
+            document.getElementById('messageDiv').style.display = 'none';
+        }
+        
+        function showAssignment(assignment) {
+            const assignmentCard = document.getElementById('assignmentCard');
+            
+            document.getElementById('studentName').textContent = assignment.student.name;
+            document.getElementById('studentEnrollment').textContent = assignment.enrollment;
+            document.getElementById('studentCourse').textContent = assignment.student.course;
+            document.getElementById('lockerNumber').textContent = `#${assignment.locker}`;
+            
+            assignmentCard.style.display = 'block';
+        }
+        
+        function hideAssignment() {
+            document.getElementById('assignmentCard').style.display = 'none';
+        }
+        
+        // Enter key support
+        document.getElementById('enrollmentInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                assignLocker();
+            }
+        });
+        
+        // Auto-focus on input
+        document.getElementById('enrollmentInput').focus();
+    </script>
+</body>
+</html>

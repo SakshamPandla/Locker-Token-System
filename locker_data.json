@@ -1,0 +1,118 @@
+{
+  "assignments": {
+    "CS2021003": 3,
+    "CS2021004": 4,
+    "ME2021003": 5,
+    "ME2021002": 2,
+    "CS2021001": 6,
+    "EC2021001": 1
+  },
+  "occupied": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "history": [
+    {
+      "enrollment": "CS2021002",
+      "name": "Priya Patel",
+      "locker": 1,
+      "action": "assigned",
+      "timestamp": "2025-07-15T01:40:48.286725"
+    },
+    {
+      "enrollment": "CS2021001",
+      "name": "Rahul Sharma",
+      "locker": 2,
+      "action": "assigned",
+      "timestamp": "2025-07-15T01:41:07.796312"
+    },
+    {
+      "enrollment": "CS2021003",
+      "name": "Vikram Singh",
+      "locker": 3,
+      "action": "assigned",
+      "timestamp": "2025-07-15T01:41:09.456083"
+    },
+    {
+      "enrollment": "CS2021004",
+      "name": "Pooja Jain",
+      "locker": 4,
+      "action": "assigned",
+      "timestamp": "2025-07-15T01:41:14.604817"
+    },
+    {
+      "enrollment": "ME2021003",
+      "name": "Kavita Nair",
+      "locker": 5,
+      "action": "assigned",
+      "timestamp": "2025-07-15T01:41:22.228531"
+    },
+    {
+      "enrollment": "CS2021001",
+      "name": "Rahul Sharma",
+      "locker": 2,
+      "action": "exited",
+      "timestamp": "2025-07-15T01:41:42.920989"
+    },
+    {
+      "enrollment": "EC2021002",
+      "name": "Anjali Verma",
+      "locker": 2,
+      "action": "assigned",
+      "timestamp": "2025-07-15T01:41:46.254885"
+    },
+    {
+      "enrollment": "EC2021002",
+      "name": "Anjali Verma",
+      "locker": 2,
+      "action": "exited",
+      "timestamp": "2025-07-15T01:42:18.152391"
+    },
+    {
+      "enrollment": "ME2021002",
+      "name": "Ravi Mehta",
+      "locker": 2,
+      "action": "assigned",
+      "timestamp": "2025-07-15T01:42:53.503527"
+    },
+    {
+      "enrollment": "CS2021001",
+      "name": "Rahul Sharma",
+      "locker": 6,
+      "action": "assigned",
+      "timestamp": "2025-07-15T02:43:25.868640"
+    },
+    {
+      "enrollment": "CS2021001",
+      "name": "Rahul Sharma",
+      "locker": 6,
+      "action": "exited",
+      "timestamp": "2025-07-15T02:43:40.417018"
+    },
+    {
+      "enrollment": "CS2021001",
+      "name": "Rahul Sharma",
+      "locker": 6,
+      "action": "assigned",
+      "timestamp": "2025-07-15T02:43:43.385376"
+    },
+    {
+      "enrollment": "CS2021002",
+      "name": "Priya Patel",
+      "locker": 1,
+      "action": "exited",
+      "timestamp": "2025-07-15T02:43:55.352230"
+    },
+    {
+      "enrollment": "EC2021001",
+      "name": "Amit Kumar",
+      "locker": 1,
+      "action": "assigned",
+      "timestamp": "2025-07-15T02:44:23.800881"
+    }
+  ]
+}
