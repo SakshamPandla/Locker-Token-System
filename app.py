@@ -1,9 +1,10 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO, emit, join_room, leave_room
 import json
 import os
 from datetime import datetime
 from typing import Dict, Set, Optional
+import threading
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-here'
@@ -25,7 +26,12 @@ class LockerSystem:
             'ME2021002': {'name': 'Ravi Mehta', 'course': 'Mechanical'},
             'CS2021004': {'name': 'Pooja Jain', 'course': 'Computer Science'},
             'EC2021003': {'name': 'Suresh Yadav', 'course': 'Electronics'},
-            'ME2021003': {'name': 'Kavita Nair', 'course': 'Mechanical'}
+            'ME2021003': {'name': 'Kavita Nair', 'course': 'Mechanical'},
+            'CS2021005': {'name': 'Deepak Tiwari', 'course': 'Computer Science'},
+            'EC2021004': {'name': 'Meera Saxena', 'course': 'Electronics'},
+            'ME2021004': {'name': 'Arjun Reddy', 'course': 'Mechanical'},
+            'CS2021006': {'name': 'Sonia Agarwal', 'course': 'Computer Science'},
+            'EC2021005': {'name': 'Karan Malhotra', 'course': 'Electronics'}
         }
         
         # Initialize data
@@ -71,6 +77,35 @@ class LockerSystem:
             'occupied': occupied_count,
             'total': self.total_lockers
         }
+    
+    def get_detailed_status(self):
+        """Get detailed status for admin"""
+        current_assignments = []
+        for enrollment, locker in self.locker_assignments.items():
+            student = self.student_database.get(enrollment, {'name': 'Unknown', 'course': 'Unknown'})
+            current_assignments.append({
+                'enrollment': enrollment,
+                'name': student['name'],
+                'course': student['course'],
+                'locker': locker,
+                'assigned_time': self.get_assignment_time(enrollment, locker)
+            })
+        
+        return {
+            'current_assignments': current_assignments,
+            'total_assignments': len(current_assignments),
+            'available_lockers': self.total_lockers - len(self.occupied_lockers),
+            'occupied_lockers': len(self.occupied_lockers),
+            'total_lockers': self.total_lockers,
+            'recent_history': self.assignment_history[-10:][::-1]  # Last 10 entries, reversed
+        }
+    
+    def get_assignment_time(self, enrollment, locker):
+        """Get assignment time for a specific enrollment and locker"""
+        for entry in reversed(self.assignment_history):
+            if entry['enrollment'] == enrollment and entry['locker'] == locker and entry['action'] == 'assigned':
+                return entry['timestamp']
+        return None
     
     def find_available_locker(self):
         """Find available locker"""
@@ -131,6 +166,9 @@ class LockerSystem:
         # Save data
         self.save_data()
         
+        # Notify all clients
+        self.notify_all()
+        
         return {
             'success': True,
             'message': f'Locker {available_locker} assigned successfully!',
@@ -173,24 +211,59 @@ class LockerSystem:
         # Save data
         self.save_data()
         
+        # Notify all clients
+        self.notify_all()
+        
         return {
             'success': True,
             'message': f'Locker {locker_number} freed successfully. Thank you!',
             'type': 'success'
         }
+    
+    def force_exit_locker(self, enrollment):
+        """Force exit locker (admin function)"""
+        result = self.exit_locker(enrollment)
+        if result['success']:
+            # Add admin action to history
+            self.assignment_history.append({
+                'enrollment': enrollment,
+                'name': 'Admin Action',
+                'locker': 0,
+                'action': 'admin_force_exit',
+                'timestamp': datetime.now().isoformat()
+            })
+            self.save_data()
+            self.notify_all()
+        return result
+    
+    def notify_all(self):
+        """Notify all connected clients of updates"""
+        # This will be called from the SocketIO context
+        socketio.emit('status_update', self.get_status())
+        socketio.emit('admin_update', self.get_detailed_status())
 
 # Initialize the locker system
 locker_system = LockerSystem()
 
+# User-facing routes
 @app.route('/')
 def index():
     return render_template('index.html')
 
+# Admin routes
+@app.route('/admin')
+def admin_index():
+    return render_template('admin.html')
+
+@app.route('/api/status')
+def admin_api_status():
+    return jsonify(locker_system.get_detailed_status())
+
+# SocketIO events
 @socketio.on('connect')
 def handle_connect():
     """Handle client connection"""
     print('Client connected')
-    # Send initial status and sample data
     emit('status_update', locker_system.get_status())
     emit('sample_data', locker_system.student_database)
 
@@ -215,9 +288,6 @@ def handle_assign_locker(data):
     
     # Send response to requesting client
     emit('assignment_result', result)
-    
-    # Broadcast status update to all clients
-    socketio.emit('status_update', locker_system.get_status())
 
 @socketio.on('exit_locker')
 def handle_exit_locker(data):
@@ -235,14 +305,39 @@ def handle_exit_locker(data):
     
     # Send response to requesting client
     emit('exit_result', result)
-    
-    # Broadcast status update to all clients
-    socketio.emit('status_update', locker_system.get_status())
 
 @socketio.on('get_status')
 def handle_get_status():
     """Handle status request"""
     emit('status_update', locker_system.get_status())
 
+@socketio.on('force_exit')
+def handle_admin_force_exit(data):
+    """Handle admin force exit request"""
+    enrollment = data.get('enrollment', '')
+    
+    if not enrollment:
+        emit('admin_message', {
+            'message': 'Please provide enrollment number',
+            'type': 'error'
+        })
+        return
+    
+    result = locker_system.force_exit_locker(enrollment)
+    
+    # Send response to requesting admin client
+    emit('admin_message', {
+        'message': result['message'],
+        'type': result['type']
+    })
+
+@socketio.on('get_admin_status')
+def handle_get_admin_status():
+    """Handle admin status request"""
+    emit('admin_update', locker_system.get_detailed_status())
+
 if __name__ == '__main__':
-    socketio.run(app, debug=True, host='0.0.0.0', port=5005)
+    print("Starting Library Locker System...")
+    print("User Interface: http://localhost:5001")
+    print("Admin Interface: http://localhost:5001/admin")
+    socketio.run(app, debug=True, host='0.0.0.0', port=5001)

@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Locker System - Admin Dashboard</title>
+    <script src="https://unpkg.com/lucide@0.263.0/dist/umd/lucide.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            min-height: 100vh;
+            color: #f8fafc;
+            padding: 1.5rem;
+        }
+        
+        .container {
+            max-width: 80rem;
+            margin: 0 auto;
+        }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #f8fafc;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header .subtitle {
+            color: #cbd5e1;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header .admin-badge {
+            display: inline-block;
+            background: #ef4444;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .stat-icon {
+            width: 3rem;
+            height: 3rem;
+            margin: 0 auto 1rem;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        .stat-card.danger .stat-icon {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+        
+        .stat-card.success .stat-icon {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        
+        .stat-card.warning .stat-icon {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #f8fafc;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            color: #cbd5e1;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 500;
+        }
+        
+        /* Main Content */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            padding: 2rem;
+        }
+        
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #f8fafc;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Current Assignments */
+        .assignments-list {
+            max-height: 60vh;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+        }
+        
+        .assignments-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .assignments-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .assignments-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+        
+        .assignment-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+        
+        .assignment-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .assignment-details .student-name {
+            font-weight: 600;
+            color: #f8fafc;
+            margin-bottom: 0.25rem;
+        }
+        
+        .assignment-details .student-meta {
+            font-size: 0.875rem;
+            color: #cbd5e1;
+            margin-bottom: 0.125rem;
+        }
+        
+        .assignment-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .locker-badge {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+            min-width: 4rem;
+            text-align: center;
+        }
+        
+        .force-exit-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .force-exit-btn:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+        }
+        
+        /* Recent History */
+        .history-list {
+            max-height: 60vh;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+        }
+        
+        .history-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 4px solid transparent;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            transition: all 0.2s ease;
+        }
+        
+        .history-item.assigned {
+            border-left-color: #10b981;
+        }
+        
+        .history-item.exited {
+            border-left-color: #ef4444;
+        }
+        
+        .history-item.admin_force_exit {
+            border-left-color: #f59e0b;
+        }
+        
+        .history-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .history-details .action-text {
+            font-weight: 600;
+            color: #f8fafc;
+            margin-bottom: 0.25rem;
+        }
+        
+        .history-details .action-meta {
+            font-size: 0.875rem;
+            color: #cbd5e1;
+        }
+        
+        .history-time {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-top: 0.5rem;
+        }
+        
+        /* Connection Status */
+        .connection-status {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .connection-status.connected {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+        
+        .connection-status.disconnected {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+        
+        /* Message */
+        .admin-message {
+            position: fixed;
+            top: 5rem;
+            right: 1rem;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: none;
+            max-width: 300px;
+        }
+        
+        .admin-message.success {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+        
+        .admin-message.error {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: #94a3b8;
+        }
+        
+        .empty-state .empty-icon {
+            width: 4rem;
+            height: 4rem;
+            margin: 0 auto 1rem;
+            opacity: 0.5;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 640px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .assignment-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .assignment-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="connection-status" id="connectionStatus">Connecting...</div>
+    <div class="admin-message" id="adminMessage"></div>
+    
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Library Locker System</h1>
+            <p class="subtitle">Administrative Dashboard</p>
+            <span class="admin-badge">Admin Access</span>
+        </div>
+        
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card success">
+                <div class="stat-icon">
+                    <i data-lucide="unlock" class="lucide"></i>
+                </div>
+                <div class="stat-value" id="availableCount">0</div>
+                <div class="stat-label">Available Lockers</div>
+            </div>
+            
+            <div class="stat-card danger">
+                <div class="stat-icon">
+                    <i data-lucide="lock" class="lucide"></i>
+                </div>
+                <div class="stat-value" id="occupiedCount">0</div>
+                <div class="stat-label">Occupied Lockers</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i data-lucide="users" class="lucide"></i>
+                </div>
+                <div class="stat-value" id="totalAssignments">0</div>
+                <div class="stat-label">Current Assignments</div>
+            </div>
+            
+            <div class="stat-card warning">
+                <div class="stat-icon">
+                    <i data-lucide="server" class="lucide"></i>
+                </div>
+                <div class="stat-value" id="totalLockers">150</div>
+                <div class="stat-label">Total Lockers</div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Current Assignments -->
+            <div class="card">
+                <h2 class="card-title">
+                    <i data-lucide="user-check" class="lucide"></i>
+                    Current Assignments
+                </h2>
+                <div class="assignments-list" id="assignmentsList">
+                    <div class="empty-state">
+                        <i data-lucide="inbox" class="lucide empty-icon"></i>
+                        <p>No current assignments</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent History -->
+            <div class="card">
+                <h2 class="card-title">
+                    <i data-lucide="clock" class="lucide"></i>
+                    Recent Activity
+                </h2>
+                <div class="history-list" id="historyList">
+                    <div class="empty-state">
+                        <i data-lucide="activity" class="lucide empty-icon"></i>
+                        <p>No recent activity</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+        
+        // Socket connection
+        const socket = io();
+        
+        // Connection status
+        const connectionStatus = document.getElementById('connectionStatus');
+        const adminMessage = document.getElementById('adminMessage');
+        
+        socket.on('connect', function() {
+            connectionStatus.textContent = '🟢 Connected';
+            connectionStatus.className = 'connection-status connected';
+            console.log('Connected to admin server');
+        });
+        
+        socket.on('disconnect', function() {
+            connectionStatus.textContent = '🔴 Disconnected';
+            connectionStatus.className = 'connection-status disconnected';
+            console.log('Disconnected from admin server');
+        });
+        
+        // Admin data updates
+        socket.on('admin_update', function(data) {
+            console.log('Admin update received:', data);
+            updateDashboard(data);
+        });
+        
+        // Admin messages
+        socket.on('admin_message', function(data) {
+            showMessage(data.message, data.type);
+        });
+        
+        // Functions
+        function updateDashboard(data) {
+            // Update stats
+            document.getElementById('availableCount').textContent = data.available_lockers;
+            document.getElementById('occupiedCount').textContent = data.occupied_lockers;
+            document.getElementById('totalAssignments').textContent = data.total_assignments;
+            document.getElementById('totalLockers').textContent = data.total_lockers;
+            
+            // Update assignments list
+            updateAssignmentsList(data.current_assignments);
+            
+            // Update history
+            updateHistoryList(data.recent_history);
+        }
+        
+        function updateAssignmentsList(assignments) {
+            const assignmentsList = document.getElementById('assignmentsList');
+            
+            if (assignments.length === 0) {
+                assignmentsList.innerHTML = `
+                    <div class="empty-state">
+                        <i data-lucide="inbox" class="lucide empty-icon"></i>
+                        <p>No current assignments</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+            
+            assignmentsList.innerHTML = '';
+            
+            assignments.forEach(assignment => {
+                const assignmentItem = document.createElement('div');
+                assignmentItem.className = 'assignment-item';
+                
+                const assignedTime = assignment.assigned_time ? 
+                    new Date(assignment.assigned_time).toLocaleString() : 
+                    'Unknown';
+                
+                assignmentItem.innerHTML = `
+                    <div class="assignment-details">
+                        <div class="student-name">${assignment.name}</div>
+                        <div class="student-meta">Enrollment: ${assignment.enrollment}</div>
+                        <div class="student-meta">Course: ${assignment.course}</div>
+                        <div class="student-meta">Assigned: ${assignedTime}</div>
+                    </div>
+                    <div class="assignment-actions">
+                        <div class="locker-badge">#${assignment.locker}</div>
+                        <button class="force-exit-btn" onclick="forceExit('${assignment.enrollment}')">
+                            <i data-lucide="log-out" class="lucide"></i>
+                            Force Exit
+                        </button>
+                    </div>
+                `;
+                
+                assignmentsList.appendChild(assignmentItem);
+            });
+            
+            lucide.createIcons();
+        }
+        
+        function updateHistoryList(history) {
+            const historyList = document.getElementById('historyList');
+            
+            if (history.length === 0) {
+                historyList.innerHTML = `
+                    <div class="empty-state">
+                        <i data-lucide="activity" class="lucide empty-icon"></i>
+                        <p>No recent activity</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+            
+            historyList.innerHTML = '';
+            
+            history.forEach(entry => {
+                const historyItem = document.createElement('div');
+                historyItem.className = `history-item ${entry.action}`;
+                
+                const actionText = getActionText(entry.action, entry.name, entry.locker);
+                const actionTime = new Date(entry.timestamp).toLocaleString();
+                
+                historyItem.innerHTML = `
+                    <div class="history-details">
+                        <div class="action-text">${actionText}</div>
+                        <div class="action-meta">Enrollment: ${entry.enrollment}</div>
+                        <div class="history-time">${actionTime}</div>
+                    </div>
+                `;
+                
+                historyList.appendChild(historyItem);
+            });
+        }
+        
+        function getActionText(action, name, locker) {
+            switch(action) {
+                case 'assigned':
+                    return `${name} assigned to locker #${locker}`;
+                case 'exited':
+                    return `${name} exited from locker #${locker}`;
+                case 'admin_force_exit':
+                    return `Admin forced exit for enrollment`;
+                default:
+                    return `${name} - ${action}`;
+            }
+        }
+        
+        function forceExit(enrollment) {
+            if (confirm(`Are you sure you want to force exit for enrollment ${enrollment}?`)) {
+                socket.emit('force_exit', { enrollment: enrollment });
+            }
+        }
+        
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('adminMessage');
+            messageDiv.textContent = message;
+            messageDiv.className = `admin-message ${type}`;
+            messageDiv.style.display = 'block';
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Request initial data
+        socket.emit('get_admin_status');
+        
+        // Refresh data every 30 seconds
+        setInterval(() => {
+            socket.emit('get_admin_status');
+        }, 30000);
+    </script>
+</body>
+</html>

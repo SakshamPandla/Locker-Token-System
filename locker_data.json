@@ -1,11 +1,13 @@
 {
   "assignments": {
     "CS2021003": 3,
-    "CS2021004": 4,
     "ME2021003": 5,
     "ME2021002": 2,
     "CS2021001": 6,
-    "EC2021001": 1
+    "EC2021001": 1,
+    "EC2021002": 7,
+    "CS2021002": 4,
+    "EC2021005": 8
   },
   "occupied": [
     1,
@@ -13,7 +15,9 @@
     3,
     4,
     5,
-    6
+    6,
+    7,
+    8
   ],
   "history": [
     {
@@ -113,6 +117,83 @@
       "locker": 1,
       "action": "assigned",
       "timestamp": "2025-07-15T02:44:23.800881"
+    },
+    {
+      "enrollment": "CS2021004",
+      "name": "Pooja Jain",
+      "locker": 4,
+      "action": "exited",
+      "timestamp": "2025-07-15T18:45:26.978846"
+    },
+    {
+      "enrollment": "CS2021002",
+      "name": "Priya Patel",
+      "locker": 4,
+      "action": "assigned",
+      "timestamp": "2025-07-15T18:45:36.589948"
+    },
+    {
+      "enrollment": "EC2021002",
+      "name": "Anjali Verma",
+      "locker": 7,
+      "action": "assigned",
+      "timestamp": "2025-07-15T18:45:51.950487"
+    },
+    {
+      "enrollment": "CS2021002",
+      "name": "Priya Patel",
+      "locker": 4,
+      "action": "exited",
+      "timestamp": "2025-07-15T18:47:27.436769"
+    },
+    {
+      "enrollment": "CS2021002",
+      "name": "Priya Patel",
+      "locker": 4,
+      "action": "assigned",
+      "timestamp": "2025-07-15T18:48:21.703351"
+    },
+    {
+      "enrollment": "EC2021005",
+      "name": "Karan Malhotra",
+      "locker": 8,
+      "action": "assigned",
+      "timestamp": "2025-07-16T05:04:05.407207"
+    },
+    {
+      "enrollment": "EC2021005",
+      "name": "Karan Malhotra",
+      "locker": 8,
+      "action": "exited",
+      "timestamp": "2025-07-16T05:04:17.586974"
+    },
+    {
+      "enrollment": "EC2021005",
+      "name": "Karan Malhotra",
+      "locker": 8,
+      "action": "assigned",
+      "timestamp": "2025-07-16T05:04:24.905794"
+    },
+    {
+      "enrollment": "EC2021005",
+      "name": "Karan Malhotra",
+      "locker": 8,
+      "action": "exited",
+      "timestamp": "2025-07-16T05:04:34.739764"
+    },
+    {
+      "enrollment": "EC2021005",
+      "name": "Admin Action",
+      "locker": 0,
+      "action": "admin_force_exit",
+      "timestamp": "2025-07-16T05:04:34.741193"
+    },
+    {
+      "enrollment": "EC2021005",
+      "name": "Karan Malhotra",
+      "locker": 8,
+      "action": "assigned",
+      "timestamp": "2025-07-16T05:04:40.138498"
     }
   ]
 }
